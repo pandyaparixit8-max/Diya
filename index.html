@@ -178,7 +178,7 @@ button{
     </div>
 
     <div style="margin-top:14px">
-      <button class="primary" id="closeBtn">Close</button>
+      <button class="primary" id="closeBtn" type="button">Close</button>
     </div>
   </div>
 </div>
@@ -193,6 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const modal=document.getElementById("modal");
   const closeBtn=document.getElementById("closeBtn");
 
+  // floating hearts
   setInterval(()=>{
     const h=document.createElement("div");
     h.className="heart";
@@ -202,51 +203,91 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(()=>h.remove(),8000);
   },900);
 
-  const noTexts=[ "No 🙃","Are you sure? 🥺","Just checking… really sure? 😌","Hmm. That felt accidental 😅",
-  "Okay but my heart disagrees 💘","This button seems confused 😂","I respect your choice… but 👀",
-  "That click had hesitation energy","Take your time, I’ll wait 🙂","Still cute either way 💗",
-  "You know YES is smiling at you","No pressure. Mild persuasion only 😇","Even the universe blinked just now ✨",
-  "That was bold. Unexpected. Iconic.","I admire the confidence 😌","This is becoming a conversation",
-  "Okay but imagine the GIFs 👀","Your finger slipped, didn’t it?","I’ll pretend I didn’t see that",
-  "Interesting choice… fascinating","Still rooting for us though 💞","Plot twist unlocked",
-  "Rom-coms usually say YES here","Suspense is building 😳","The YES button feels ignored",
-  "No is mysterious, I’ll give you that","Your honesty is appreciated 💐","This tension deserves background music",
-  "Okay, villain arc activated (jk)","I’ll ask again, politely 😌","That was very main-character of you",
-  "No worries, still smiling here 🙂","Your move, protagonist","This is not a rejection, it’s a pause",
-  "The YES button just sighed","Bold strategy, let’s see how it plays out","You’re enjoying this, aren’t you? 😏",
-  "This feels like a slow-burn romcom","Romance loading… please wait","I’m still here, by the way 💗",
-  "Okay okay, I see you","No today… maybe yes in 2 seconds?","The suspense is cute though",
-  "Dramatic pause noted","Respectfully… reconsider?","No is temporary. GIFs are forever",
-  "You’re making this interesting","Still hoping quietly 💘"];
+  const noTexts=[
+    "No 🙃","Are you sure? 🥺","Just checking… really sure? 😌","Hmm. That felt accidental 😅",
+    "Okay but my heart disagrees 💘","This button seems confused 😂","I respect your choice… but 👀",
+    "That click had hesitation energy","Take your time, I’ll wait 🙂","Still cute either way 💗",
+    "You know YES is smiling at you","No pressure. Mild persuasion only 😇","Even the universe blinked just now ✨",
+    "That was bold. Unexpected. Iconic.","I admire the confidence 😌","This is becoming a conversation",
+    "Okay but imagine the GIFs 👀","Your finger slipped, didn’t it?","I’ll pretend I didn’t see that",
+    "Interesting choice… fascinating","Still rooting for us though 💞","Plot twist unlocked",
+    "Rom-coms usually say YES here","Suspense is building 😳","The YES button feels ignored",
+    "No is mysterious, I’ll give you that","Your honesty is appreciated 💐","This tension deserves background music",
+    "Okay, villain arc activated (jk)","I’ll ask again, politely 😌","That was very main-character of you",
+    "No worries, still smiling here 🙂","Your move, protagonist","This is not a rejection, it’s a pause",
+    "The YES button just sighed","Bold strategy, let’s see how it plays out","You’re enjoying this, aren’t you? 😏",
+    "This feels like a slow-burn romcom","Romance loading… please wait","I’m still here, by the way 💗",
+    "Okay okay, I see you","No today… maybe yes in 2 seconds?","The suspense is cute though",
+    "Dramatic pause noted","Respectfully… reconsider?","No is temporary. GIFs are forever",
+    "You’re making this interesting","Still hoping quietly 💘"
+  ];
+
   let i=0,lastX=-999,lastY=-999;
 
   function moveNo(){
-    const a=noArea.getBoundingClientRect(),b=noBtn.getBoundingClientRect();
-    const maxX=a.width-b.width,maxY=a.height-b.height;
+    const a=noArea.getBoundingClientRect();
+    const b=noBtn.getBoundingClientRect();
+    const maxX=Math.max(0, a.width-b.width);
+    const maxY=Math.max(0, a.height-b.height);
     let x,y;
+
+    // ensure it doesn't get "stuck" near the same spot
     do{
       x=Math.random()*maxX;
       y=Math.random()*maxY;
     }while(Math.hypot(x-lastX,y-lastY)<70);
+
     lastX=x;lastY=y;
-    noBtn.style.left=x+"px";noBtn.style.top=y+"px";
+    noBtn.style.left=x+"px";
+    noBtn.style.top=y+"px";
   }
 
   noBtn.onclick=()=>{
     noBtn.textContent=noTexts[i++%noTexts.length];
     moveNo();
-    noBtn.classList.remove("wiggle");void noBtn.offsetWidth;noBtn.classList.add("wiggle");
+    noBtn.classList.remove("wiggle");
+    void noBtn.offsetWidth;
+    noBtn.classList.add("wiggle");
   };
 
+  // YES -> submit to BOTH Google Forms + open modal
   yesBtn.onclick=()=>{
-    fetch("https://docs.google.com/forms/u/0/d/e/1FAIpQLSfEX7HTR8PxVn4GiyvZ0KGpvaRI_ibhqMVXXPkc3q2PtGSu-A/formResponse",
-      {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},
-      body:"entry.864756993="+encodeURIComponent("YES | Diya | "+new Date().toISOString())});
+    // optional: prevent duplicate submissions from same browser
+    if (localStorage.getItem("diya_yes_sent") === "1") {
+      modal.classList.add("open");
+      return;
+    }
+    localStorage.setItem("diya_yes_sent","1");
+
+    const payload="YES | Diya | "+new Date().toISOString();
+
+    // Google Form 1 (existing)
+    fetch(
+      "https://docs.google.com/forms/u/0/d/e/1FAIpQLSfEX7HTR8PxVn4GiyvZ0KGpvaRI_ibhqMVXXPkc3q2PtGSu-A/formResponse",
+      {
+        method:"POST",
+        mode:"no-cors",
+        headers:{"Content-Type":"application/x-www-form-urlencoded"},
+        body:"entry.864756993="+encodeURIComponent(payload)
+      }
+    );
+
+    // Google Form 2 (new)
+    fetch(
+      "https://docs.google.com/forms/u/1/d/e/1FAIpQLSfqv4bik2GoM8DCwdtIBOJV7F2fBuSeFJKzviQpyiuCxNCRTA/formResponse",
+      {
+        method:"POST",
+        mode:"no-cors",
+        headers:{"Content-Type":"application/x-www-form-urlencoded"},
+        body:"entry.1150748696="+encodeURIComponent(payload)
+      }
+    );
+
     modal.classList.add("open");
   };
 
   closeBtn.onclick=()=>modal.classList.remove("open");
-  modal.onclick=e=>{if(e.target===modal)modal.classList.remove("open")};
+  modal.onclick=e=>{ if(e.target===modal) modal.classList.remove("open"); };
 });
 </script>
 
